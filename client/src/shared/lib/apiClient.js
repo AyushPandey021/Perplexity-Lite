@@ -46,8 +46,8 @@ export const apiClient = async (path, options = {}) => {
 
     throw new Error(
       validationMessage ||
-        serverMessage ||
-        `Request failed with status ${response.status}`
+      serverMessage ||
+      `Request failed with status ${response.status}`
     )
   }
 

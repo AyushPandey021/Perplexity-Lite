@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "../api/auth.api";
 import AuthShell from "../components/AuthShell";
 import FormField from "../components/FormField";
+import { login } from "../model/authSlice";
 
 const Login = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
@@ -23,9 +25,7 @@ const Login = () => {
     setIsSubmitting(true);
 
     try {
-      const data = await loginUser(form);
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      await dispatch(login(form)).unwrap();
       navigate("/dashboard");
     } catch (err) {
       setError(err.message);

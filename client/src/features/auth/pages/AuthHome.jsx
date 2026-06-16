@@ -1,56 +1,25 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { getCurrentUser, logoutUser } from "../api/auth.api";
+import { logout } from "../model/authSlice";
 
 const AuthHome = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const user = useSelector((state) => state.auth.user);
 
   const wasVerified = searchParams.get("verified") === "1";
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const data = await getCurrentUser();
-        setUser(data.user);
-        localStorage.setItem("user", JSON.stringify(data.user));
-      } catch {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/login", { replace: true });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadUser();
-  }, [navigate]);
-
   const handleLogout = async () => {
-    try {
-      await logoutUser();
-    } catch {}
-
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    await dispatch(logout());
     navigate("/login");
   };
 
-  if (isLoading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-slate-50 to-slate-100">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900" />
-          <p className="text-sm text-slate-500">Checking your session...</p>
-        </div>
-      </main>
-    );
-  }
-
-  const initials = user?.username?.slice(0, 2)?.toUpperCase() || "U";
+  const initials = useMemo(
+    () => user?.username?.slice(0, 2)?.toUpperCase() || "U",
+    [user?.username]
+  );
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-slate-50 to-slate-100 px-6">
