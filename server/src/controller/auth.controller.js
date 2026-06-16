@@ -5,6 +5,18 @@ import sendEmail from "../services/mail.service.js";
 const JWT_SECRET = process.env.JWT_SECRET || "default_jwt_secret";
 const SERVER_URL = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5000}`;
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+const AUTH_COOKIE_OPTIONS = {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 1000,
+};
+
+const createAuthToken = (userId) => jwt.sign(
+    { userId },
+    JWT_SECRET,
+    { expiresIn: "1h" }
+);
 
 const renderVerificationPage = ({ title, message, status = "success" }) => {
     const isSuccess = status === "success";
@@ -36,7 +48,9 @@ const renderVerificationPage = ({ title, message, status = "success" }) => {
 };
 
 export const register = async (req, res) => {
-    const { username, email, password } = req.body;
+    const username = req.body.username?.trim();
+    const email = req.body.email?.trim().toLowerCase();
+    const { password } = req.body;
 
     try {
         const existingUser = await usermodel.findOne({
@@ -69,7 +83,7 @@ export const register = async (req, res) => {
             const verifyUrl = `${SERVER_URL}/api/auth/verify-email?token=${emailVerificationToken}`;
 
             try {
-                await sendEmail({
+                const wasEmailSent = await sendEmail({
                     to: newUser.email,
                     subject: "Welcome to Perplexity Lite - Verify Your Email",
                     html: `
@@ -117,18 +131,37 @@ export const register = async (req, res) => {
     </div>
   `,
                 });
+
+                if (!wasEmailSent) {
+                    await usermodel.deleteOne({ _id: newUser._id });
+                    return res.status(503).json({
+                        message: "Email service is not configured. Add Gmail OAuth environment variables, then register again.",
+                    });
+                }
             } catch (mailError) {
                 console.error("Verification email error:", mailError);
+                await usermodel.deleteOne({ _id: newUser._id });
+                return res.status(503).json({
+                    message: "Could not send verification email. Check Gmail OAuth settings and try again.",
+                });
             }
         }
 
         return res.status(201).json({
             message: email
-                ? "User registered successfully. Please verify your email."
+                ? "Verification email sent. Please verify your email to continue."
                 : "User registered successfully",
         });
     } catch (error) {
         console.error("Register error:", error);
+
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyPattern || {})[0] || "Account";
+            return res.status(400).json({
+                message: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`,
+            });
+        }
+
         return res.status(500).json({ message: "Server error" });
     }
 };
@@ -164,10 +197,10 @@ export const verifyEmail = async (req, res) => {
             await user.save();
         }
 
-        return res.status(200).send(renderVerificationPage({
-            title: "Email Verified",
-            message: "Your email has been verified successfully.",
-        }));
+        const authToken = createAuthToken(user._id);
+        res.cookie("token", authToken, AUTH_COOKIE_OPTIONS);
+
+        return res.redirect(`${CLIENT_URL}/dashboard?verified=1`);
     } catch (error) {
         const message = error.name === "TokenExpiredError"
             ? "This verification link has expired. Please register again or request a new verification email."
@@ -213,11 +246,8 @@ export const login = async (req, res) => {
             });
         }
 
-        const token = jwt.sign(
-            { userId: user._id },
-            JWT_SECRET,
-            { expiresIn: "1h" }
-        );
+        const token = createAuthToken(user._id);
+        res.cookie("token", token, AUTH_COOKIE_OPTIONS);
 
         return res.status(200).json({
             success: true,
@@ -237,6 +267,19 @@ export const login = async (req, res) => {
             message: "Server error",
         });
     }
+};
+
+export const logout = (req, res) => {
+    res.clearCookie("token", {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: "Logged out successfully",
+    });
 };
 
 

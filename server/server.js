@@ -1,11 +1,9 @@
+import "dotenv/config";
 import app from "./app.js";
 import connectDatabase from "./src/config/database.js";
-import {testAi} from "./src/services/ai.service.js";
-import dotenv from "dotenv";
-dotenv.config();
 
 const PORT = process.env.PORT || 5000;
-testAi()
+
 const startServer = async () => {
   try {
     await connectDatabase();

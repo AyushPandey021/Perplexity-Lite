@@ -11,3 +11,10 @@ export const registerUser = (payload) =>
     method: 'POST',
     body: JSON.stringify(payload),
   })
+
+export const getCurrentUser = () => apiClient('/auth/get-me')
+
+export const logoutUser = () =>
+  apiClient('/auth/logout', {
+    method: 'POST',
+  })
