@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useDispatch ,useSelector} from "react-redux";
+import { useNavigate , Navigate} from "react-router-dom";
 import AuthShell from "../components/AuthShell";
 import FormField from "../components/FormField";
 import { login } from "../model/authSlice";
@@ -10,6 +10,8 @@ const Login = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const user = useSelector((state) => state.auth.user);
+  const loading = useSelector((state) => state.auth.loading);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (event) => {
@@ -33,6 +35,9 @@ const Login = () => {
       setIsSubmitting(false);
     }
   };
+  if(loading && user){
+    return <Navigate to="/dashboard" replace />
+  }
 
   return (
     <AuthShell
