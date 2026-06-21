@@ -5,25 +5,16 @@ dotenv.config();
 
 const mailConfig = {
     user: process.env.GOOGLE_USER_EMAIL?.trim(),
-    clientId: process.env.GOOGLE_CLIENT_ID?.trim(),
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET?.trim(),
-    refreshToken: process.env.GOOGLE_REFRESH_TOKEN?.trim(),
+    pass: process.env.EMAIL_PASSWORD?.trim(),
 };
 
-const hasMailConfig =
-    mailConfig.user &&
-    mailConfig.clientId &&
-    mailConfig.clientSecret &&
-    mailConfig.refreshToken;
+const hasMailConfig = mailConfig.user && mailConfig.pass;
 
 const transporter = hasMailConfig ? nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        type: 'OAuth2',
         user: mailConfig.user,
-        clientId: mailConfig.clientId,
-        clientSecret: mailConfig.clientSecret,
-        refreshToken: mailConfig.refreshToken,
+        pass: mailConfig.pass,
     },
 }) : null;
 

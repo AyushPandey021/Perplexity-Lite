@@ -1,28 +1,57 @@
 import mongoose from "mongoose";
 
 const chatSchema = new mongoose.Schema(
-    {
-        user: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-            required: true,
-        },
-        title: {
-            type: String,
-            trim: true,
-            default: "New Chat",
-        },
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
     },
-    {
-        timestamps: true,
-    }
+
+    title: {
+      type: String,
+      trim: true,
+      default: "New Conversation",
+      maxlength: 100,
+    },
+
+    lastMessage: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    isPinned: {
+      type: Boolean,
+      default: false,
+    },
+
+    isArchived: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      versionKey: false,
+    },
+    toObject: {
+      virtuals: true,
+      versionKey: false,
+    },
+  }
 );
 
-chatSchema.set("toJSON", {
-    virtuals: true,
-    versionKey: false,
-    transform: (_doc, ret) => {
-        delete ret._id;
-    },
+chatSchema.virtual("id").get(function () {
+  return this._id.toHexString();
 });
+
+chatSchema.index({
+  user: 1,
+  updatedAt: -1,
+});
+
 export default mongoose.model("Chat", chatSchema);

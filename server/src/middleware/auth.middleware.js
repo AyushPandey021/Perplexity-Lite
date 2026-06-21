@@ -23,7 +23,7 @@ export const authUser = (req, res, next) => {
     );
 
     req.userId = decoded.userId;
-    req.user = decoded;
+    req.user = { id: decoded.userId, ...decoded };
 
     next();
   } catch (error) {

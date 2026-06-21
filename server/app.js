@@ -2,6 +2,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import authRouter from "./src/routes/auth.routes.js";
 
+import chatRouter from "./src/routes/chat.route.js"
 const app = express();
 
 app.use((req, res, next) => {
@@ -38,5 +39,6 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/chats", chatRouter);
 
 export default app;

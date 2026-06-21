@@ -135,14 +135,14 @@ export const register = async (req, res) => {
                 if (!wasEmailSent) {
                     await usermodel.deleteOne({ _id: newUser._id });
                     return res.status(503).json({
-                        message: "Email service is not configured. Add Gmail OAuth environment variables, then register again.",
+                        message: "Email service is not configured. Add GOOGLE_USER_EMAIL and EMAIL_PASSWORD environment variables, then register again.",
                     });
                 }
             } catch (mailError) {
                 console.error("Verification email error:", mailError);
                 await usermodel.deleteOne({ _id: newUser._id });
                 return res.status(503).json({
-                    message: "Could not send verification email. Check Gmail OAuth settings and try again.",
+                    message: "Could not send verification email. Check email credentials and try again.",
                 });
             }
         }
@@ -284,35 +284,35 @@ export const logout = (req, res) => {
 
 
 export const getMe = async (req, res) => {
-  try {
-    const userId = req.userId;
+    try {
+        const userId = req.userId;
 
-    const user = await usermodel
-      .findById(userId)
-      .select("-password");
+        const user = await usermodel
+            .findById(userId)
+            .select("-password");
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                verified: user.verified,
+            },
+        });
+    } catch (error) {
+        console.error("Get Me Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+        });
     }
-
-    return res.status(200).json({
-      success: true,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        verified: user.verified,
-      },
-    });
-  } catch (error) {
-    console.error("Get Me Error:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
-  }
 };
